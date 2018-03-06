@@ -1,0 +1,323 @@
+\section{Software}
+Die Firmware des Messgerätes ist eine in C geschriebene Software für die AVR-Prozessor-architektur. Sie besteht aus einem Hauptprogramm zur Ablaufsteuerung und mehreren C-Modulen für die Kommunikation mit den Peripheriegeräten sowie diverse Algorithmen. Die Bediensoftware ist eine Java-Applikation für Windows.
+
+\subsection{Berechnungskonzept}
+Einer der Hauptaugenmerke der Firmware ist die Effizienz. Je schneller der Code arbeitet, desto höher kann die Abtastfrequenz sein und desto genauer wird die Messung. Eigens für das Messgerät wurde deshalb ein schlankes Übertragunsprotokoll sowie eine Berechnungsgrundlage entwickelt, dessen Ziel eine möglichst effiziente Verarbeitung der Messdaten ist. Nachfolgend erfolgt die Herleitung und Funktionsweise dieses Konzepts.
+Der verwendete Mikrocontroller besitzt eine einfache 8Bit CPU ohne Floating Point Unit. Das heisst, er besitzt keine Recheneinheit, die Operationen auf Gleitkommazahlen direkt anwenden kann. Deshalb sorgt erste Optimierung dafür, dass die Firmware möglichst nur mit Ganzzahlen arbeitet und eine Umrechnung in die Leistung mit Nachkommastellen erst ganz am Schluss erfolgt.
+
+Zunächst muss eine Grenze gezogen werden bezüglich der Genauigkeit der Messdaten. Die erste Einschränkung erfolgt durch die Quantisierung des ADC. Dieser hat beim ATMega2560 eine Auflösung von 10Bit. Digitalisiert werden drei Strombereiche und die Spannung. Je nach Bereich ergibt sich dadurch eine (theoretische) Genauigkeit pro Bit. Die Daten können aus Tabelle \ref{tab:theoretische_Genauigkeit_der_Messbereiche} entnommen werden.
+
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|l|l|l|l|l}
+\cline{1-4}
+Analoger Eingang & Beschreibung           & Wertebereich   & $r_{ADC}$ Auflösung pro Bit &  \\ \cline{1-4}
+ADC0             & Spannung               & -400V bis 400V & 0.78125$\frac{V}{Bit}$      &  \\ \cline{1-4}
+ADC1             & Kleinster Strombereich & -0.5A bis 0.5A & 0.0009765625$\frac{A}{Bit}$ &  \\ \cline{1-4}
+ADC2             & Mittlerer Strombereich & -5A bis 5A     & 0.009765625$\frac{A}{Bit}$  &  \\ \cline{1-4}
+ADC3             & Grösster Strombereich  & -15A bis 15A   & 0.029296875$\frac{A}{Bit}$  &  \\ \cline{1-4}
+\end{tabular}
+\caption{theoretische Genauigkeit der Messbereiche}
+\label{tab:theoretische_Genauigkeit_der_Messbereiche}
+\end{center}
+\end{table}
+
+
+Das Messgerät speichert keine Strom- oder Spannungswerte ab, sondern nur die Leistung. Die Werte von Abbildung \ref{tab:theoretische_Genauigkeit_der_Messbereiche} können deshalb noch für jeden Bereich multipliziert werden. Man erhält dadurch die Genauigkeit der Leistung pro Bit.
+
+\begin{equation}
+R_{ADC1}=r_{ADC0}\cdot r_{ADC1}= 0.000762939\frac{W}{Bit}
+\label{eq:RADC1}
+\end{equation}
+\begin{equation}
+R_{ADC2}=r_{ADC0}\cdot r_{ADC2}= 0.007629394\frac{W}{Bit}
+\label{eq:RADC2}
+\end{equation}
+\begin{equation}
+R_{ADC3}=r_{ADC0}\cdot r_{ADC3}= 0.022888184\frac{W}{Bit}
+\label{eq:RADC3}
+\end{equation}
+
+Die Analogschaltung bildet die verschiedenen Wertebereiche in ein Intervall von $0V$ bis $5V$ ab. Der AD-Wandler ist so eingestellt, dass dieser die Eingangsspannung bezogen auf eine Referenzspannung von $5V$ digitalisiert. Der zugewiesene Dezimalwert ist durch Formel \ref{eq:ADC} gegeben. Die Eingangsspannung variiert je nach Wertebereich und kann durch Formel \ref{eq:UIN} reproduziert werden. Zur übersichtlicheren und allgemeinen Darstellung wurde dem realen Signal die Variable x zugeordnet.
+
+\begin{equation}
+ADC=\frac{U_{IN} \cdot 2^{10}}{U_{ref}}
+\label{eq:ADC}
+\end{equation}
+
+\begin{equation}
+U_{IN} =\frac{U_{ref}}{x_{max} - x_{min}} \cdot \left( x + \frac{x_{max} - x_{min}}{2} \right) = \frac{U_{ref} \cdot x}{x_{max} - x_{min}}+\frac{U_ref}{2}
+\label{eq:UIN}
+\end{equation}
+
+\begin{table}[H]
+\begin{tabular}{ll}
+ADC:		&  Registerwert dezimal [ ]\\
+$U_{IN}$:	&  Eingansspannung am ADC [V]\\
+x:			&  Realer Signalwert [V]oder [A]\\
+$U_{ref}$:	&  Referenzspannung entspricht 5V\\
+\end{tabular}
+\end{table}
+
+Die Schreibweise $x_{max}-x_{min}$ bezeichnet den Wertebereich des entsprechenden Eingangs, wie er in Abbildung \ref{tab:theoretische_Genauigkeit_der_Messbereiche} gezeigt ist. Da die Analogschaltung ein offsetbelastetes Eingangssignal liefert (2.5V am ADC entsprechen 0A bzw. 0V), muss dieser entfernt werden. Die beiden Gleichungen \ref{eq:ADC} und \ref{eq:UIN} werden kombiniert und algebraisch umgeformt.
+
+$$ ADC=\frac{U_{IN} \cdot 2^{10}}{U_{ref}}=\frac{U_{ref} \cdot x}{x_{max} - x_{min}}+\frac{U_ref}{2} \cdot \frac{ 2^{10}}{U_{ref}}=\frac{x \cdot 2^{10}}{x_{max} - x_{min}}+\frac{2^{10}}{2}$$
+
+$$ADC-\frac{2^{10}}{2}=ADC-512=x \cdot \frac{2^{10}}{x_{max} - x_{min}}$$
+
+Es genügt somit, nur den Dezimalwert des ADCs abzüglich des Offsets in den Buffern zu speichern. Der gesamte rechte Teil ist vorerst redundant und kann am Ende wieder hinzugefügt werden. Dies bedingt jedoch auch, dass man für jeden Wertebereich einen eigenen Buffer benötigt, da jeder Buffer eine andere Wertigkeit pro Bit aufweist. Möchte man aus dem Dezimalwert des ADC den realen Wert zurückbilden, so muss die Gleichung nur auf x umgeformt werden.
+
+$$x=(ADC-512)\cdot \frac{x_{max} - x_{min}}{2^{10}}=(ADC-512)\cdot r_{ADCn}$$
+
+Dieser Skalierungsfaktor entspricht genau der in Abbildung \ref{tab:theoretische_Genauigkeit_der_Messbereiche} gezeigten Genauigkeit pro Bit. Da nach der Offsetentfernung das System nun linear ist, können die Dezimalwerte der einzelnen Eingänge ebenfalls multipliziert werden. Somit gilt:
+
+\begin{equation}
+p_i=(ADC0-512)\cdot(ADCn -512) \cdot r_{ADC0} \cdot r_{ADCn} = (ADC0-512)\cdot(ADCn -512) \cdot R_{ADCn}
+\label{eq:PI}
+\end{equation}
+
+Wie bereits erwähnt basiert das Berechnungskonzept auf das Aufsummieren der Momentanleistung über eine bestimmte Zeit. Physikalisch betrachtet wird also zwischenzeitlich die Energie gespeichert und nicht die Leistung. Ist wie in unserem Fall die Messung zeitdiskret, so gilt:
+
+\begin{equation}
+E=\sum_{i=1}^{f_s \cdot t_s} p_i \cdot\Delta t = \sum_{i=1}^{f_s \cdot t_s} (ADC0-512)\cdot(ADC1 -512) \cdot R_{ADCn} \cdot \frac{1}{f_s}
+\label{eq:E}
+\end{equation}
+
+\begin{table}[H]
+\begin{tabular}{ll}
+E:			&  Energie [J]\\
+$p_i$:		&  Eingansspannung am ADC [V]\\
+$\Delta t$:	&  Zeitdifferenz [s]\\
+$f_s$:		&  Abtastfrequenz [Hz]\\
+$ R_{ADCn} $: & Wertigkeit des Buffers [$\frac{W}{Bit}$]\\
+$t_s$:		&  Abtastzeit [s]
+\end{tabular}
+\end{table}
+
+Formel \ref{eq:E} wird nun auf beiden Seiten erweitert und wieder algebraisch umgeformt.
+
+$$E=\sum_{i=1}^{f_s \cdot t_s} p_i \cdot \frac{1}{f_s}$$
+
+$$\frac{f_s}{R_{ADCn}}\cdot E =\frac{f_s}{R_{ADCn}}\cdot \sum_{i=1}^{f_s \cdot t_s} p_i \cdot \frac{1}{f_s} = \sum_{i=1}^{f_s \cdot t_s} \frac{p_i}{R_{ADCn}} = \sum_{i=1}^{f_s \cdot t_s} (ADC0-512)\cdot(ADC1 -512)$$
+
+Innerhalb des Summenoperators befindet sich nun genau der in Formel \ref{eq:PI} hergeleitete Wert des Buffers. Da Leistung bekanntlich Energie durch Zeit ist, muss man den Term nur noch auf diesen Ausdruck umformen und man erhält die reale Leistung des Eingangssignals. Dem gesamten rechten Ausdruck der Gleichung wurde die Variable B zugewiesen. B ist der Dezimalwert im Buffer, nachdem dieser 10 Sekunden lang aufsummiert wurde.
+
+\begin{equation}
+\overline{P} = \frac{E}{t_s} = B \cdot \frac{R_{ADCn}}{f_s \cdot t_s}
+\label{eq:P}
+\end{equation}
+
+Das Problem dieses Konzeptes ist der grosse Dynamikbereich. Wenn man die Messwerte aufsummiert, können im "worst case"  bis zu 35Bit grosse Zahlen im Buffer entstehen (bei 10kHz Abtastfrequenz und 10s Abtastzeit). Als Alternative könnte man die einzelnen Buffer abspeichern und die Rückskalierung erst in der Java-Applikation vornehmen. Um Speicherplatz zu sparen, könnte man nur einen signifikanten Teil davon abspeichern. Trotzdem müsste man die Werte von drei Buffern permanent speichern. Man hat sich gegen dieses Konzept entschieden. Einerseits, um Speicher zu sparen und die Übertragung zu beschleunigen, andererseits, um in jedem Leistungsbereich eine gleich grosse Genauigkeit zu ermöglichen. Als Kompromiss nimmt man die langsame Berechnung mit Fliesskommazahlen in Kauf.
+
+Zusammenfassen lässt sich der ganze Prozess wie folgt beschreiben:
+
+Es werden immer zwei analoge Eingänge ausgewertet, einmal Spannung und einmal Strom. Vom Dezimalwert des AD-Wandlers wird der Offset entfernt. Die beiden Werte werden multipliziert und in einem Buffer gespeichert. Während 10 Sekunden wird dieser Vorgang wiederholt und der Buffer stetig aufsummiert. Erst jetzt nimmt man den langsamen Vorgang des Fliesskommarechnens in Kauf und wandelt den Dezimalwert gemäss Formel \ref{eq:P} in eine reale Leistung um. Dieser Wert wird zusammen mit einem Zeitstempel auf dem Flashspeicher abgelegt. Um die korrekte Leistung zu berechnen, müssen im Programm folgende Konstanten hinterlegt sein: der Offset aller vier analogen Eingängen, die Genauigkeit in Watt pro Bit für alle drei Buffer, die Abtastfrequenz und die Abtastzeit. Die hier hergeleiteten Werte sind theoretisch und werden später durch experimentelle Bestimmung nachkorrigiert.
+
+Anmerkung: Da das Messgerät über drei Strombereiche verfügt, werden während des Messens auch drei Buffer aufsummiert. Je nachdem, welcher Eingang ausgewertet wurde, wird das Ergebnis in den dazugehörigen Buffer gespeichert. Nach der Abtastzeit werden alle 3 Buffer mit ihren eigenen Skalierungsfaktoren umgerechnet und die Ergebnisse addiert.
+
+\subsection{Übertragungskonzept}\label{subsec:Übertragungskonzept}
+
+Die zweite Optimierung befasst sich mit dem sparsamen Speichern und Übertragen der Daten, um den Übertragungszeit zu verkürzen. Gespeichert werden die Uhrzeit sowie der Wochentag, gefolgt von der eigentlichen Messung. Diese Daten sollen möglichst kompakt in ein kleines Protokoll gepackt werden. Die Daten werden ohne Codierung, also keine ASCII Charakter oder Ähnliches, als Bitstrom gespeichert. Es ist später Aufgabe der Software, diesen Bitstrom wieder zu trennen und korrekt zu interpretieren. In Abbildung \ref{fig:Übertragungskonzept} ist die Aufteilung des Bitstroms zu sehen.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_uebertragung.png}
+\caption{Übertragungskonzept}
+\label{fig:Übertragungskonzept}
+\end{center}
+\end{figure}
+
+Ein Datenpaket besteht somit aus 6 Byte bzw. 48 Bit. Die Zeitinformationen sind so codiert, dass nur genau so viele Bits zur Verfügung stehen, wie benötigt werden. Im Overhead können zusätzliche Statusinformationen dem Programm übergeben werden bzw. wird dieser benötigt, um ungültige Messdaten zu detektieren (Erklärung später). Ausserdem wird damit der Datenstrom auf ein ganzzahliges Vielfaches von Acht aufgefüllt. Bei den Messdaten spart man sich das letzte Byte der eigentlich 4Byte grossen Fliesskommazahl, da es sich bei diesen Bits um die Grössenordnung 4. - 8. Nachkommastelle handelt. Diese Genauigkeit kann gar nicht erreicht werden, weshalb diese Information auch nicht gespeichert wird.
+
+\subsection{Peripherie und Algorithmen}
+
+Die Funktionen für die Kommunikation mit der Peripherie sowie einige kleine Algorithmen sind zwecks Programmübersicht in externe C-Module gepackt. Auf die Verwendung von externen Bibliotheken ist komplett verzichtet worden. Einerseits um die Nachvollziehbarkeit zu gewährleisten, andererseits, um den Code möglichst optimiert zu gestalten, da dies einer der Hauptprioritäten bei der Erstellung der Firmware war. Es war also nicht Ziel, eine möglichst universell einsetzbare Bibliothek zu schreiben, sondern einen schlanken und effizienten Treiber zu erstellen, der nur gerade die Funktionen beinhaltet, welche das Messgerät benötigt.
+ 
+Der Prozessor muss mit drei Peripheriegeräten kommunizieren. Das erste Modul ist eine RTC, welche am I2C-Bus betrieben wird. Zur Speicherung steht ein Flashspeicher mit SPI Schnittstelle zur Verfügung. Zuletzt das Bluetooth-Modul, über das eine serielle Schnittstelle (USART) emuliert wird. Alle drei Schnittstellen hat der ATMega2560 bereits eingebaut. Sie können mit relativ geringem Aufwand genutzt werden. Die Nutzung dieser Schnittstellen auf \glqq Registerebene\grqq{} wird in diesem Bericht nicht erläutert, dafür wird auf das Datenblatt des Prozessors bzw. den Peripheriegeräten verwiesen, welches im Anhang zu finden ist. 
+
+Das letzte C-Modul beinhaltet die Funktionen zur Auswertung der analogen Eingänge sowie die softwaremässige Erkennung der Strombereiche. Der AD-Wandler ist beim Prozessor bereits integriert und gehört nicht zur Peripherie. Trotzdem sind zwecks Codeübersicht diese Funktionen ausgelagert. Die Funktionsweise aller Module wird im Folgenden erläutert.
+
+\subsubsection*{Bluetooth-Kommunikation via USART}
+Die Kommunikation der Firmware mit der PC Software besteht aus zwei Teilen. Erstens vom PC zum Bluetooth-Modul und zweitens vom Modul zum Prozessor. Der PC und das Modul emulieren eine serielle Schnittstelle. Diese Kommunikation ist unabhängig von der zweiten Stufe und erlaubt sogar Verzögerungen, da das Bluetooth-Modul über einen kleinen Datenbuffer verfügt. Die Konfiguration der beiden Übertragungsstufen (Datenrate, Wortbreite, usw.) ist ebenfalls unabhängig und muss nicht übereinstimmen.  
+
+Die Datenrate bzw. Baudrate muss von beiden Partnern mit einer Genauigkeit von ca. 2\% übereinstimmen, damit die Kommunikation funktioniert. Dies gilt für beide Stufen. Da die USART-Schnittstelle nicht mit einem externen Taktgeber betrieben wird, muss die Baudrate für die Kommunikation von Prozessor zu Bluetooth Modul ein ganzzahliger Teiler der CPU-Clock (16 MHz) sein. Die höchstmögliche Übertragungsrate, welche die Bedingung erfüllt und von beiden Geräten unterstützt wird, ist 38400. Die Wortbreite wird auf dem Standardwert von acht Bit belassen, da sowohl die CPU als auch der Speicher mit dieser Wortbreite arbeiten.
+Wie die Daten übertragen werden, ist in Kapitel \ref{subsec:Übertragungskonzept} beschrieben. Die Java-Applikation muss diesen Datenstrom auseinander zu trennen und die Werte korrekt abbilden.  
+
+\subsubsection*{I2C Realtime Clock}
+Das verwendete RTC-Modul DS3231 ist ein IC mit integriertem Quarz und I2C-Schnittstelle. Es kann direkt an diesem Datenbus angeschlossen werden. Das dazugehörige C-Modul stellt alle Funktionen zur Verfügung, um die Uhrzeit auszulesen und bei Bedarf eine neue Uhrzeit einzustellen. Das RTC-Modul arbeitet mit BCD-Codierung, weshalb beim Lesen und Speichern der Uhrzeit diese stets in Dezimalwerte gewandelt werden muss.
+
+\subsubsection*{4-Channel-ADC}
+Der Mikrocontroller verfügt über diverse analoge Eingänge, welche über einen Multiplexer umgeschaltet und anschliessend quantisiert werden. Insgesamt vier solcher Eingänge werden für das Messgerät benötigt. Welchem Eingang welche Bedeutung zukommt, ist in Abbildung \ref{tab:theoretische_Genauigkeit_der_Messbereiche} zu sehen. Da das Wandeln ein vergleichsweise langsamer Prozess ist, werden bei einer Messung immer nur zwei Eingänge gewandelt: einer für die Spannung und einer der Strombereiche. Die Messbereiche werden softwaremässig ausgewertet und umgeschaltet. Ob sich ein Eingang im Grenzbereich befindet (Overflow bzw. Underflow), wird von einem Algorithmus detektiert. Dieser reagiert bei Bedarf und schaltet den Multiplexer auf einen anderen Messbereich um. Der Algorithmus wird anhand eines Beispiels erläutert.
+
+An den Messshunts sind drei Verstärkerschaltungen für die Strommessung angebracht. Mathematisch betrachtet bilden diese eine Abbildung, welche ein Sinussignal im Wertebereich \^I bis \^{-I} in den Bereich 0V bis 5V abbilden. Daraus folgt, dass je nach Eingangssignal am Ausgang der Verstärkerstufe ein übersteuertes oder ein zu schwaches Signal auftritt. Da das Signal einen Offset aufweist, bedeutet ein Eingangssignal von 2.5V, dass im Moment kein Strom fliesst. In Abbildung \ref{fig:Software_messbereich} ist dieses Verhalten visualisiert.
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_messbereich.png}
+\caption{Messbereiche}
+\label{fig:Software_messbereich}
+\end{center}
+\end{figure}
+
+Gegeben ist ein Eingangssignal mit einer Amplitude von 1A. ADC1, der Eingang für den kleinsten Bereich, übersteuert in diesem Fall und ADC3 schwankt nur gerade so um den Mittelwert. Im Falle eines Overflows liefert der ADC Werte in der Nähe von 0 und 1023 zurück. Im Underflow sind es Werte im Bereich 512. Dieses Verhalten kann von der Software detektiert werden. Sie verfügt über zwei Zähler, welche inkrementiert werden, sollte das Signal eine vordefinierte Schwelle überschreiten (roter Balken in Abbildung \ref{fig:Software_messbereich} ). Ist das Signal ausserhalb dieses Bereiches, werden die jeweiligen Zähler dekrementiert (können aber nicht negativ werden). Überschreitet einer der Zähler einen bestimmten Wert, so schaltet die Software den Messbereich um und setzt beide Zähler zurück.
+
+Sinnvolle Werte für die Schaltschwelle sowie der Obergrenze des Zählers wurden experimentell bestimmt. Insbesondere problematisch sind nichtlineare Lasten, deren Stromkennlinie kein sinusförmiges Signal aufweist. In Abbildung \ref{fig:Software_stromkennlinie_L} ist diese Problematik visualisiert.
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_stromkennlinie.png}
+\caption{Stromkennlinie induktive Last}
+\label{fig:Software_stromkennlinie_L}
+\end{center}
+\end{figure}
+
+Zu sehen sind reale Messungen mit induktiven Lasten. Man sieht, dass ein stark übersteuertes Signal einen vordefinierten Schwellbereich deutlich seltener überschreitet. Die Obergrenze für den Zähler muss dementsprechend gering gewählt werden, damit auch bei solchen Lasten die Software den Mesbereich rechtzeitig umschaltet. Gleichzeitig dürfen die Werte nicht zu niedrig sein, damit die Software nicht zwischen zwei Messbereichen hin und her springt.
+Die für gut befundenen Werte sind in Tabelle \ref{tab:threshold_Values} zu sehen. Die Zahlen der Wertebereiche sind die dezimalen Rückgabewerte der ADCs.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\multicolumn{1}{|l|}{\textbf{Schaltbereich}} & \multicolumn{1}{l|}{\textbf{\begin{tabular}[c]{@{}l@{}}Overflow-\\ Zähler\end{tabular}}} & \multicolumn{1}{l|}{\textbf{\begin{tabular}[c]{@{}l@{}}Underflow -\\ Zähler\end{tabular}}} & \multicolumn{1}{l|}{\textbf{\begin{tabular}[c]{@{}l@{}}Overflow-\\ Wertebereich\end{tabular}}} & \multicolumn{1}{l|}{\textbf{\begin{tabular}[c]{@{}l@{}}Underflow-\\ Wertebereich\end{tabular}}} \\ \hline
+ADC1 - ADC2                                  & 20                                                                                       & 20                                                                                         & 820\textless X \textless 200                                                                      & Offset +/- 30                                                                                   \\ \hline
+ADC2 - ADC3                                  & 20                                                                                       & 20                                                                                         & 820\textless X \textless 200                                                                      & Offset +/- 90                                                                                   \\ \hline
+\end{tabular}
+\caption{Threshhold-Values}
+\label{tab:threshold_Values}
+\end{table}
+
+
+\subsubsection*{SPI Flashspeicher}
+
+Dieses C-Modul hat die Aufgabe, den Speicher des Messgerätes zu jeder Zeit konsistent zu halten. Beim Speichern von neuen Messwerten muss die Speicheradresse immer wieder inkrementiert werden. Im Falle, dass der Speicher voll ist, müssen neue Sektoren wieder gelöscht und bereitgestellt werden. Beim Aufstarten muss der Code den zuletzt verwendeten Speicherplatz wiederfinden, unabhängig davon, zu welchem Zeitpunkt das Messgerät vom Strom getrennt wurde. Um all dies sicherzustellen, sind diverse Mechanismen entwickelt und implementiert. Die grösste Aufmerksamkeit gebührte der Effizienz des Codes. 
+
+Der erste Schritt wird mit der Organisation des Speichers getätigt. Der insgesamt 221 Bit (2 MBit) grosse Speicher wird in 64 4KByte-Sektoren unterteilt. Dies ist zugleich die kleinste Einheit, welche gelöscht werden kann (Flashspeicher können nicht byteweise gelöscht werden). Der gesamte Speicher kann mit einer 24Bit-Adresse adressiert werden, wobei effektiv nur 18 Bit benötigt werden. Eine Adresse adressiert jeweils 8 Bit des Speichers. Die Aufteilung ist in Abbildung \ref{fig:Aufteilung_des_Speichers} zu sehen. 
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_Tabelle_2.png}
+\caption{Aufteilung des Speichers}
+\label{fig:Aufteilung_des_Speichers}
+\end{center}
+\end{figure}
+
+Jeder Sektor wird gleich beschrieben: Jeweils die ersten und letzten zwei Bytes sind reserviert und werden nicht mit Messdaten belegt. Das erste Byte eines jeden Sektors wird genutzt, um Statusinformationen über den Sektor zu speichern. Ab Byte Nr. 2 (Indexierung bei 0) beginnen dann die Messdaten, welche nach dem definierten Protokoll jeweils 6 Byte gross sind. Der Sektor endet somit bei Byte Nr. 4093, gefolgt von zwei leeren Speicherplätzen. Insgesamt können somit 682 Messungen pro Sektor abgelegt werden. Sind alle Sektoren voll, wird der erste Sektor gelöscht und darauf weitergeschrieben. In Abbildung \ref{fig:Aufteilung_eines_Sektors} ist die Aufteilung eines einzelnen Sektors zu sehen.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_Tabelle_3.png}
+\caption{Aufteilung eines Sektors}
+\label{fig:Aufteilung_eines_Sektors}
+\end{center}
+\end{figure}
+
+Der Gewinn dieser Organisation liegt in der Beschleunigung des Initialisierungsvorgangs. Um den zuletzt genutzten Sektor zu finden, ist es ausreichend, jeweils das erste Byte eines Sektors einzulesen. Um den aktuellen Speicherplatz zu finden, muss nur ein Byte pro Messung gelesen werden, nämlich das Byte mit der Overheadinformation. Somit muss bei der Suche des Speicherplatzes nur jedes 6. Byte gelesen werden. Im \glqq worst case\grqq{}  ist der Initialisierungsvorgang also nach 746 Lesevorgängen beendet (64 Statusbytes und 682 Overheads).
+
+Die 4Bit des Overheads wurden so definiert, dass eine Einserfolge einen ungültigen Datensatz signalisiert. Ein leerer Speicherplatz im Flashspeicher ist logisch mit Einsen gefüllt. Das Lesen eines leeren Speicherplatzes gibt den Wert \glqq 1111 1111\grqq{}   zurück. Stösst der Algorithmus beim Aufstarten auf eine Einserfolge im Overhead, ist der leere Speicherplatz gefunden. 
+
+Die Handhabung der Statusinformation eines Sektors ist etwas komplexer und wird im Folgenden genauer erläutert. Der Status wird immer in das gleiche Byte geschrieben. Ein Überschreiben im eigentlichen Sinne ist grundsätzlich nicht möglich. Wie oben erwähnt ist ein leerer Speicherplatz mit logischen Einsen gefüllt. Solange die einzelnen Bits von logisch 1 auf logisch 0 wechseln, ist ein Überschreiben möglich. Sind die Statusinformationen so gewählt, dass sie in der chronologischen Reihenfolge ihres Auftretens nur weitere Nullen hinzufügen, so können mehrere Statusinformationen im gleichen Byte gespeichert werden. Um den Speicher konsistent zu halten, werden nur vier unterschiedliche Zustände benötigt.
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Bitfolge des Statusbytes & Bedeutung \\ \hline
+11111110                 & Empty     \\ \hline
+11111100                 & Written   \\ \hline
+11111000                 & Full      \\ \hline
+11110000                 & Busy      \\ \hline
+\end{tabular}
+\caption{Codierung des Overheades}
+\label{tab:Codierung_des_Overheades}
+\end{center}
+\end{table}
+
+Um Fehlauswertungen zu vermeiden, wird einer Bitfolge aus lauter Einsen oder Nullen keine Bedeutung zugewiesen. 
+
+Anmerkung: Wird unmittelbar nach dem Starten eines Löschvorgangs das Messgerät vom Strom getrennt, wäre es theoretisch möglich, dass beim Lesen des Statusbytes eine Einserfolge (leerer Speicherplatz) zurückgegeben wird. Weiss man aber über das Auftreten dieses Ereignisses bescheid, kann der Initialisierungsvorgang dementsprechend programmiert werden.
+
+\begin{table}[H]
+\begin{tabular}{ll}
+Empty:			&   Der Sektor ist gelöscht und bereit, um neue Daten 								aufzunehmen. Dieser \\
+				&   Status wird nur bei einer 														kompletten Löschung des gesamten Speichers auf alle \\
+				&	Sektoren geschrieben.\\
+Written:		&   Der Sektor ist mit Daten gefüllt jedoch noch nicht 						voll. Beim Vorbereiten eines \\
+				&   neuen Sektors wird 	jeweils direkt der Written-Status 							auf den Sektor geschrieben,\\
+				&   auch wenn sich noch keine eigentlichen 										Messdaten darauf befinden.\\
+Full:			&   Der Sektor ist komplett mit Messdaten gefüllt.\\
+Busy:			&   Der Sektor steht gerade kurz vor einem Löschvorgang.\\
+\end{tabular}
+\end{table}
+
+Der Busy-Status ist deswegen notwendig, weil ein Löschvorgang vergleichsweise langsam ist (bis zu 50 ms). Erst nach dem Abschliessen des Löschvorgangs wird dem Sektor ein neuer Status zugewiesen.
+
+Um beim Aufstarten nun den korrekten Sektor zu finden, bedarf es der korrekten Interpretation der Statusinformationen. Was wenn während des Schreibvorgangs der Strom getrennt wird? Was wenn genau beim \glqq wrap around\grqq{}   das Gerät ausgeschaltet wird? Es gibt eine grosse Zahl von Ereignissen, welche auftreten können. Viele davon sind Spezialfälle, welche nur sehr selten sind. Trotzdem müssen diese abgedeckt sein. Hier ein einfaches Beispiel:
+
+Das Messgerät war kurze Zeit im Betrieb gewesen. Die ersten drei Sektoren sind bereits voll. Genau als der dritte Sektor voll ist, ist das Messgerät ausgesteckt worden. Der vierte Sektor und alle darauffolgenden Sektoren haben somit als Status \glqq Empty\grqq . Die ersten drei Sektoren den Status  \glqq Full\grqq .
+
+Beim Aufstarten wird daher prioritär zuerst nach leeren Sektoren gesucht. Danach nach beschriebenen Sektoren und entgegen der Reihenfolge von Abbildung \ref{tab:Codierung_des_Overheades} werden Sektoren mit dem Status \glqq Busy\grqq{}  noch vor Sektoren mit dem Status \glqq Full\grqq{}  gesucht.
+
+Im genannten Beispiel findet der Algorithmus schnell einen Treffer und liefert als Ergebnis den Dezimalwert 3 für den vierten Sektor (Indexierung startet bei 0!). Nun muss der Algorithmus das Statusbyte des vorherigen Sektors überprüfen. Er wird als Ergebnis den Status \glqq Full\grqq{} bekommen. Nun ist die Information eindeutig und das Programm weiss, dass der Sektor mit der Nummer 3 der aktuelle Sektor zum Schreiben ist. Da dieser leer ist, kann die Suche nach dem Speicherplatz gestoppt werden und als Nummer für den aktuellen Speicherplatz der Wert 2 gesetzt werden. (2 deshalb, weil immer beim dritten Byte begonnen, wird Messdaten zu schreiben)
+
+Dies ist nur ein Beispiel. Der gesamte Initialisierungsablauf ist in Abbildung \ref{tab:Rückgabewert} zu sehen. Die rot eingefärbte Linie ist der Hauptpfad und signalisiert den Normalablauf des Speicherns. Der Algorithmus liefert einen 8Bit-Wert zurück. Die ersten 6 Bit repräsentieren den Index des gefundenen Sektors, die obersten beiden Bits werden für die Codierung der Statusinformation verwendet, damit das Hauptprogramm weiss, welche Art von Status zuerst gefunden wurde. Die Codierung ist in der nachfolgenden Tabelle zu sehen.
+
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Rückgabewert des Algorithmus & Bedeutung                                                                                                                                                                            \\ \hline
+00xxxxxx                     & Es wurden noch leere Sektoren gefunden.                                                                                                                                              \\ \hline
+01xxxxxx                     & \begin{tabular}[c]{@{}l@{}}Es gibt keine leeren Sektoren mehr, aber\\ es wurde ein beschriebener Sektor gefunden.\\ (Normalzustand)\end{tabular}                                     \\ \hline
+10xxxxxx                     & \begin{tabular}[c]{@{}l@{}}Es wurden weder leere noch beschriebene Sektoren\\ gefunden. Aber es wurde ein Sektor gefunden,\\ welcher noch nicht korrekt gelöscht wurde.\end{tabular} \\ \hline
+11xxxxxx                     & Es wurde ein Sektor gefunden, bei dem der Löschvorgang\\
+							& nicht abgeschlossen wurde. \\ \hline
+\end{tabular}
+\caption{Rückgabewert des Algorithmus}
+\label{tab:Rückgabewert}
+\end{center}
+\end{table}
+
+[ Grafik folgt noch ] 
+
+Kurzzusammenfassung:
+Das Programm muss sich zur Laufzeit nur zwei Variablen merken: den aktuellen Sektor und die aktuelle Nummer des Speicherplatzes. Daraus kann jeweils die korrekte 24Bit-Adresse gebildet werden. Beim Aufstarten sucht sich ein Algorithmus diese beiden Werte und gibt diese ans Hauptprogramm weiter. Durch die Speicherorganisation ist dieser Suchvorgang sehr effizient und benötigt nur wenige Lesevorgänge. Die Speicherplatznummer wird stetig inkrementiert. Ist ein Sektor voll, so wird die Sektornummer inkrementiert und die Nummer des Speicherplatzes wieder auf 2 gesetzt. Ist der gesamte Speicher voll, so wird nach und nach der nächste Sektor wieder gelöscht, um darauf neue Daten schreiben zu können. Im Dauerbetrieb gehen dadurch die ältesten Messdaten stetig verloren. 
+
+
+
+\pagebreak
+\subsection{Bediensoftware}%Elias 1 Seite
+%Topdown beschreibung
+Als Bediensoftware ist ein Java-Applikation geschrieben worden. Diese soll den Benutzern die Möglichkeit bieten, die gemessenen Daten auszulesen und in ein gebräuchliches Format zu exportieren, damit eine einfache Weiterverarbeitung der Daten ermöglicht beispielsweise in Excel oder Matlab.
+
+Das Programm bietet drei Hauptfunktionen um mit dem P3T7 zu kommunizieren. Diese sind im Bereich 'Steuerung' zu finden. Daneben bietet das Tool die Funktion sich mit dem P3T7 zu verbinden. Die im Bereich 'Bluetooth' zu finden ist. Die restlichen Elemente dienen alle der Ausgabe. Der 'Status' visualisiert den Fortschritt des Downloads. Im Bereich 'Echtzeit' werden die aktuellen Messwerte des P3T7 angezeigt. Im dominierenden Bereich 'Plot' werden die Daten aus dem Speicher visualisiert, um dem Benutzer eine schnelle Validierung der Daten zu ermöglichen.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_GUI.png}
+\caption{GUI der Bediensoftware}
+\end{center}
+\end{figure}
+
+\subsubsection*{Steuerung}
+
+Mit den drei Hauptfunktionen können die Daten aus dem P3T7 extrahiert werden. Wenn ein Download gestartet wird, kann auf dem Status-Panel der Fortschritt beobachtet werden. Falls der Download abgeschlossen ist werden die Daten im Plot dargestellt. Dieser soll dem Nutzer die Sicherheit geben, dass keine falschen Daten heruntergeladen wurden. Anschliessend kann mit dem Button 'Daten exportiern' ein CSV-File generiert werden. Dieses ist mit dem Namen 'ausgabe.txt' neben der Programmdatei zu finden. Mit dem Button 'Echtzeit' kann die Echtzeitübertragung gestartet werden. Während der Echtzeitübertragung werden jede Sekunde die aktuellen Messwerte an das Tool weitergeleitet. Diese werden anschliessend direkt im Echtzeit-Panel angezeigt.
+
+\subsubsection*{Bluetooth}
+
+Das Bluetoot-Modul emuliert über Bluetooth eine seriell Verbindung. Um das Tool mit dem P3T7 zu verbinden muss zuerst im Betriebssystem das P3T7 gekoppelt werden.  Ist dies erfolgt kann im Tool im Bluetooth-Panel aus dem Dropdown-Menü der entsprechende ComPort ausgewählt werden. Dieser kann im Gerätemanager nachgeschaut werden. Falls ein falscher Port ausgewählt wird, vergeht eine Zeit (ca. 30s) bis das Programm den Fehler bemerkt, welche abgewartet wird.
+
+
+\subsubsection*{Programmstruktur}
+
+Das Programm wurde nach dem MVC Pattern realisiert. Somit hat es praktisch keine nennenswerten strukturellen Eigenheiten bis auf das Interface für die serielle Verbindung. 
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{images/Software_UML.png}
+\caption{Diagramm der Bediensoftware}
+\end{center}
+\end{figure}
