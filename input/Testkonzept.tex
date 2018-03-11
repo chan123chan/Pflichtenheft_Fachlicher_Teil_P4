@@ -1,1 +1,17 @@
 \section{Testkonzept}
+In den nachfolgenden Abschnitten wird erläutert welche Teilsysteme und Komponenten getestet werden.
+
+\subsection{Gesamtsystem}
+Die ID eines bluetooth beacons soll empfangen werden. Aufgrund dieser ID soll das entprechende Audio-Signal abgespielt werden. 
+
+\subsection{Audiowiedergabe}
+Die Audiowiedergabe kann einzeln getestet werden. Dazu wird mit einem kleinen Testprogramm eine Audiodatei über den NRF52832 auf den Knochenschallaktor ausgegeben. 
+
+\subsection{Akkulaufzeit}
+Um die Akkulaufzeit zu testen wird mit dem Gerät dauerhaft eine Audiodatei abgespielt, da dies am meisten Energie verbraucht. Dazu wird ein Testprogramm geladen.
+
+\subsection{Tiefentladungsschutz}
+Um die Funktion des Tiefentladungsschutz zu testen, wird der Akku bis auf seine untere Entladungsgrenze entladen und dann getestet ob der Tiefentladungsschutz das Gerät abschaltet.
+
+\subsection{Bluetooth}
+Es wird überprüft ob ein bluetooth beacon erkannt werden kann und auf welche Entfernung er erkannt wird. Auch wird das Verhalten geprüft wenn mehrere beacons in der Nähe sind.
