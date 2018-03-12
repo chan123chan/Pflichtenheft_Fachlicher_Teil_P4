@@ -1,17 +1,17 @@
 \section{Testkonzept}
-In den nachfolgenden Abschnitten wird erläutert welche Teilsysteme und Komponenten getestet werden.
+In den nachfolgenden Abschnitten wird erläutert, welche Teilsysteme und Komponenten getestet werden.
 
 \subsection{Gesamtsystem}
-Die ID eines bluetooth beacons soll empfangen werden. Aufgrund dieser ID soll das entprechende Audio-Signal abgespielt werden. 
+Die ID eines Bluetooth-Beacons soll empfangen und entsprechend intepretiert werden. Aufgrund dieser ID wird dann das entprechende Audio-Signal vom Mikrocontroller aus dem Speicher geholt und abgespielt. 
 
 \subsection{Audiowiedergabe}
-Die Audiowiedergabe kann einzeln getestet werden. Dazu wird mit einem kleinen Testprogramm eine Audiodatei über den NRF52832 auf den Knochenschallaktor ausgegeben. 
+Die Audiowiedergabe kann einzeln getestet werden. Dazu wird mit einem kleinen Testprogramm eine Audiodatei über den NRF52832 auf den Knochenschallaktor ausgegeben. Dabei kann die Audioausgabe auf die Funktionalität (Wird das Audio-File wiedergeben?) und die Qualität (Lautstärke, Verzerrung) getestet werden.
 
 \subsection{Akkulaufzeit}
-Um die Akkulaufzeit zu testen wird mit dem Gerät dauerhaft eine Audiodatei abgespielt, da dies am meisten Energie verbraucht. Dazu wird ein Testprogramm geladen.
+Um die Akkulaufzeit zu testen, wird mit dem Prototyp dauerhaft eine Audiodatei abgespielt. Dies verbraucht am meisten Energie und eignet sich somit bestens, um die maximale Laufzeit zu ermitteln. Für die Umsetzung wird dazu ein entsprechendes Testprogramm auf den Mikrocontroller geladen und ausgeführt.
 
 \subsection{Tiefentladungsschutz}
-Um die Funktion des Tiefentladungsschutz zu testen, wird der Akku bis auf seine untere Entladungsgrenze entladen und dann getestet ob der Tiefentladungsschutz das Gerät abschaltet.
+Um die Funktion des Tiefentladungsschutz zu testen, wird der Akku bis auf seine untere Entladungsgrenze belastet und dann getestet ob der Tiefentladungsschutz das Gerät abschaltet. Dazu lassen sich zuvor berechnete Werte bestens mit gemessenen Werten vergleichen, um eine entsprechende Aussage über die Funktionalität machen zu können.
 
 \subsection{Bluetooth}
-Es wird überprüft ob ein bluetooth beacon erkannt werden kann und auf welche Entfernung er erkannt wird. Auch wird das Verhalten geprüft wenn mehrere beacons in der Nähe sind.
+Es wird überprüft ob ein Bluetooth Beacon erkannt werden kann und auf welche Entfernung er erkannt wird. Weiter wird das Systemverhalten bei mehreren vorhandenen ID-Signalen überprüft. Über die ID-Nummer oder über das auszugebende Audio-File kann erkannt werden, ob die richtige ID vom Mikrocontroller verarbeitet wird.
