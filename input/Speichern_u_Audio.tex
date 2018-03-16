@@ -4,13 +4,13 @@ Die Ausgabe der gewünschten Audio-Dateien wird mit einem sogenannten Körpersch
 
 \begin{figure}[H]
 \begin{center}
-	\includegraphics[width=130mm]{data/Schallaktor.png}
+	\includegraphics[width=110mm]{data/Schallaktor.png}
 	\caption{Körperschallaktor von Adafruit}
 	\label{fig:schallaktorAdafruit}
 \end{center}
 \end{figure}
 
 Das Ziel ist es, bei möglichst geringem Energieverbrauch, eine möglichst intensive Lautstärke, bei guter Audioqualität zu erzielen.
-Die Steuerung und Ausgabe der verschiedenen Audiosignale wird von einem zentralen Mikrocontroller übernommen. Ausserdem muss das Audiosignal verstärkt und bei Bedarf gefiltert werden. Damit der Energieverbrauch möglichst gering bleibt, wird die Verstärker und Filterstufe digital durch den Mikrocontroller umgesetzt. Dadurch kann die Anzahl der analogen Bauelemente verringert werden und somit auch der Platzbedarf klein gehalten werden.
+Die Steuerung und Ausgabe der verschiedenen Audiosignale wird von einem zentralen Mikrocontroller übernommen. Ausserdem muss das Audiosignal verstärkt und bei Bedarf gefiltert werden. Damit der Energieverbrauch möglichst gering bleibt, wird die Verstärker und Filterstufe wenn möglich digital durch den Mikrocontroller umgesetzt. Dadurch kann die Anzahl der analogen Bauelemente verringert werden und somit auch der Platzbedarf klein gehalten werden.
 
 Die Speichereinheit wird mit einer externen SD-Karte umgesetzt, die dann manuell entfernt und beschrieben werden kann. Das bedeutet auch, dass die Platzierung der SD-Karte möglichst elegant am Gehäuse erfolgen muss. Alternativ wird versucht den Datentransfer zur Aktualisierung der SD-Karte über die Bluetooth-Verbindung umzusetzen. Die Kommunikation über USB wird vernachlässigt. Damit der Mikrocontroller eine aktive Verbindung zur Speichereinheit hat, wird eine entsprechende Schnittstelle für den Datentransfer zwischen Speichereinheit und Mikrocontroller eingerichtet. Somit kann sich der Mikrocontroller entsprechend der Bluetooth-ID, das jeweils zugehörige Audio-File holen, über die Filter und Verstärkerstufe aufbereiten und anschliessend über den Körperschallaktor ausgeben.
