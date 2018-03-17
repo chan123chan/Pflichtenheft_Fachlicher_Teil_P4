@@ -2,7 +2,7 @@
 Das Lösungskonzept soll von aussen nach innen definiert werden. Darum werden zuerst die Systemgrenzen definiert. Anschliessend werden die Funktionen beschrieben. Diese werden nachfolgend in Teilsysteme unterteilt. Am Schluss wird noch ein alternativer Ansatz diskutiert, der aber nicht weiterverfolgt wird.
 
 \subsection{Systemgrenzen}
-Wie dem nachfolgendem Diagramm entnommen werden kann, wird sich das Projekt auf den Dojo konzentrieren. Alle Systeme die es für das Gesamtsystem Museum braucht, sollen nicht betrachtet werden. Es sollen die Schnittstellen soweit definiert werden, dass die Einbindung in ein Gesamtsystem keine Probleme bereiten sollte.
+Wie dem nachfolgendem Diagramm entnommen werden kann, wird sich das Projekt auf den Dojo konzentrieren. Alle Systeme die es für das Gesamtsystem Museum braucht, sollen nicht betrachtet werden. Die Schnittstellen werden soweit definiert, dass die Einbindung in ein Gesamtsystem keine Probleme bereiten sollte.
 
 \begin{figure}[H]
 \begin{center}
@@ -13,14 +13,14 @@ Wie dem nachfolgendem Diagramm entnommen werden kann, wird sich das Projekt auf 
 \end{figure}
 
 \subsection{Funktionen}
-Die Funktionen sind in zwei Bereiche geteilt. Zum einen sind die Funktionen für die Museumsbesucher beschrieben, welche nachfolgend als Nutzer bezeichnet werden. Zum anderen die für die Museumsbetreiber relevanten Funktionen, diese werden nachfolgend als Betreiber bezeichnet.
+Die Funktionen sind in zwei Bereiche unterteilt. Einerseits sind die Funktionen für die Museumsbesucher beschrieben, welche nachfolgend als Nutzer bezeichnet werden. Zum anderen die für die Museumsbetreiber relevanten Funktionen. Diese werden nachfolgend als Betreiber bezeichnet.
 \subsubsection*{Nutzer}
-Der Nutzer geht mit dem Dojo durch das Museum. Sobald die Bluetooth Beacons genug nahe sind, wird dem Nutzer ein Signal gesendet. Dies erfolgt durch Vibration oder mithilfe einer LED. Jetzt soll der Nutzer entscheiden ob er sich das dazugehörige Audio-File anhören will. Will er das, kann er den Play-Button betätigen. Die Lautstärke kann über die Buttons justiert werden. Falls das Ausstellungsstück dem Nutzer gefallen hat, kann er die Merken-Taste betätigen. Diese speichert das Ausstellungsstück auf eine Liste im Dojo. Am Ende des Museumsbesuches kann diese Liste ausgewertet werden. Dies fällt aber nicht mehr in die zuvor definierten Systemgrenzen. Wir stellen nur sicher, dass diese Liste exportiert werden kann.
+Der Nutzer geht mit dem Dojo durch das Museum. Sobald die Bluetooth Beacons genug nahe sind, wird dem Nutzer ein Signal gesendet. Dies erfolgt durch Vibration oder mithilfe einer LED. Jetzt soll der Nutzer entscheiden ob er sich das zugehörige Audio-File anhören will. Will er das, kann er den Play-Button betätigen. Die Lautstärke kann über die Buttons justiert werden. Falls das Ausstellungsstück dem Nutzer gefallen hat, kann er die Merken-Taste betätigen. Diese speichert das Ausstellungsstück auf eine Liste im Dojo. Am Ende des Museumsbesuches kann diese Liste ausgewertet werden. Dies fällt aber nicht mehr in die zuvor definierten Systemgrenzen. Wir stellen nur sicher, dass die Liste exportiert werden kann.
 \subsubsection*{Betreiber}
-Der Betreiber muss den Dojo konfigurieren. Dies erfolgt über eine SD-Karte. Diese kann mit dem Computer beladen werden. Nachfolgend wird diese in den Dojo eingeführt. Das Nachladen des Akkumulator erfolgt über eine induktive Ladung. Die nächsten zwei Funktionen sind Wunschziele, die vor allem mit Rücksicht auf die Laufzeit realisiert werden. Den Bluetooth-Reciver könnte man kurzzeitig auf ein Bluetooth Beacon umschalten. Der Betreiber müsste nur noch einen Reciver pro Raum installieren. Damit könnte man die gewünschte HeatMap realisieren. Das zweite wäre die Möglichkeit per Bluetooth einzelne Audiofiles auf den Dojo zu übertragen, um im Falle einer Änderung der Austellung die Liste anzupassen.
+Der Betreiber muss den Dojo konfigurieren. Dies erfolgt über eine SD-Karte, welche mit dem Computer beladen wird. Anschliessend wird diese in den Dojo eingeführt. Das Nachladen des Akkumulator erfolgt über eine induktive Ladung. Die nächsten zwei Funktionen sind Wunschziele, die vor allem mit Rücksicht auf die Laufzeit realisiert werden. Den Bluetooth-Reciver könnte man kurzzeitig auf ein Bluetooth Beacon umschalten. Der Betreiber müsste nur noch einen Reciver pro Raum installieren. Damit könnte man die gewünschte HeatMap realisieren. Das zweite wäre die Möglichkeit per Bluetooth einzelne Audiofiles auf den Dojo zu übertragen, um im Falle einer Änderung der Austellung die Liste anzupassen.
 
 \subsection{Teilsysteme}
-Das Herzstück des Dojo ist ein NRF52 von Nordic Semiconductor mit integriertem Bluetooth-Stack, welcher wiederum low-Energy fähig ist. Die Daten werden auf einer SD-Karte gespeichert. Der NRF52 wird die Audiodaten an den Verstärker weitergeben, welcher sie über den Körperschallaktor ausgibt. Gespeist wird der Dojo von einem Akku welcher Induktiv geladen wird. Diese Teilsysteme werden in den Nachfolgenden Kapitel noch genauer erläutert.
+Das Herzstück des Dojo ist ein NRF52 von Nordic Semiconductor mit integriertem Bluetooth-Stack, welcher wiederum low-Energy fähig ist. Die Daten werden auf einer SD-Karte gespeichert. Der NRF52 wird die Audiodaten an den Verstärker weitergeben, welcher sie über den Körperschallaktor ausgibt. Gespeist wird der Dojo von einem Akku, welcher induktiv geladen wird. Diese Teilsysteme werden in den nachfolgenden Kapiteln noch genauer erläutert.
 
 \begin{figure}[H]
 \begin{center}
