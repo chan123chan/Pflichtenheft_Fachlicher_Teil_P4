@@ -24,18 +24,18 @@ Der Akkumulator besteht aus Lithium-Ionen Zellen, welche zusammen eine Spannung 
 \end{figure}
 
 Wie bereits oben beschrieben, beträgt die Betriebszeit eines durchschnittlichen Rundganges rund drei bis vier Stunden. Sobald die Rückgabe erfolgt ist, wird das Dojo in die Ladebuchse gesteckt wobei immer diese Dojos rausgegeben werden, welche sich am längsten in der Ladestation befinden. Bei einer Stückzahl welche grösser ist als die Besucherzahl, erlaubt dies einen lückenlosen Betrieb.
-Die notwendige Kapazitätsberechnung wird durch Formel \ref{fig:kapazitaet} beschrieben. Die maximale Leistung des Dojos lässt sich durch Leistung des Knochenschallgebers und des Microcontrollers beschreiben. Alle anderen Komponenten können durch ihren geringen Betriebsstrom vernachlässigt werden. Der Knochenschallgeber weist eine durchschnittliche Leistung von 0.35 Watt auf. Die Rechnung erfolgt mit einem Wert von rund 0.5W und einer Betriebszeit von rund 80$\%$. Die Microcontrollerleistung lässt sich durch den Radio Strom (7.5mA) und einigen Mikroampere Systemstrom (gesamthaft ca. 100 $\mu$ A) multipliziert mit der Systemspannung von 3.6V bestimmen. Nachfolgende Formel \ref{fig:LeistungMC} zeigt die Berechnung der Microcontrollerleistung und Formel \ref{fig:kapazitaet} zeigt die Kapazitätsabschätzung.
+Die notwendige Kapazitätsberechnung wird durch Formel \ref{fig:kapazitaet} beschrieben. Die maximale Leistung des Dojos lässt sich durch Leistung des Knochenschallgebers und des Microcontrollers beschreiben. Alle anderen Komponenten können durch ihren geringen Betriebsstrom vernachlässigt werden. Der Knochenschallgeber weist gemäss der Zielnummer 2.1 in Kapitel \pageref{Projektziele} eine maximale RMS Leistung von 214.5mW auf. Die Rechnung erfolgt mit einem Sicherheitswert von rund 0.35W und einer Betriebszeit von rund 80$\%$. Die Microcontrollerleistung lässt sich durch den Radio Strom (7.5mA) und einigen Mikroampere Systemstrom (gesamthaft ca. 100 $\mu$ A) multipliziert mit der Systemspannung von 3.6V bestimmen. Zur Sicherheit werden noch 0.1W zur Leistung addiert, damit die erforderliche Laufzeit auch wirklich erreicht wird. Nachfolgende Formel \ref{fig:LeistungMC} zeigt die Berechnung der Microcontrollerleistung und Formel \ref{fig:kapazitaet} zeigt die Kapazitätsabschätzung.
 
 \begin{equation}
 P_{MC}=U\cdot I_{MC}
 \label{fig:LeistungMC}
 \end{equation}
 \begin{equation}
-Q=\frac{\left(t\cdot 0.8\cdot P_{Kn}\right)+\left(t\cdot P_{MC}\right)}{U}=\frac{\left(5h\cdot 0.8\cdot 0.5W\right)+\left(5h\cdot 3.6V\cdot 7.6mA\right)}{3.6V}=0.594Ah
+Q=\frac{\left(t\cdot 0.8\cdot P_{Kn}\right)+\left(t\cdot P_{MC}\right)+P_{zus}}{U}=\frac{\left(5h\cdot 0.8\cdot 0.5W\right)+\left(5h\cdot 3.6V\cdot 7.6mA\right)+0.1W}{3.6V}=0.427Ah
 \label{fig:kapazitaet}
 \end{equation}
 
-Die geforderte Kapazität liegt gemäss Formel \ref{fig:kapazitaet} bei 0.594Ah. Unabhängig von der Grösse der Batterie ist der Schutz vor äusseren Einflüssen. Hierbei kann mittels einer gezielten Überwachung die Lebensdauer der Batterie wesentlich verlängert und die anfallenden Nebenkosten vermindert werden. Diese Thematik wird im nachfolgenden Unterkapitel \ref{Überlade und Entladeschutz} genauer erläutert.
+Die geforderte Kapazität liegt gemäss Formel \ref{fig:kapazitaet} bei 0.427Ah. Unabhängig von der Grösse der Batterie ist der Schutz vor äusseren Einflüssen. Hierbei kann mittels einer gezielten Überwachung die Lebensdauer der Batterie wesentlich verlängert und die anfallenden Nebenkosten vermindert werden. Diese Thematik wird im nachfolgenden Unterkapitel \ref{Überlade und Entladeschutz} genauer erläutert.
                                          
 \subsection{Überlade und Entladeschutz}  \label{Überlade und Entladeschutz}
 
