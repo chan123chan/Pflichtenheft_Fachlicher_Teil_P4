@@ -24,23 +24,22 @@ Der Akkumulator besteht aus Lithium-Ionen Zellen, welche zusammen eine Spannung 
 \end{figure}
 
 Wie bereits oben beschrieben, beträgt die Betriebszeit eines durchschnittlichen Rundganges rund drei bis vier Stunden. Sobald die Rückgabe erfolgt ist, wird das Dojo in die Ladebuchse gesteckt wobei immer diese Dojos rausgegeben werden, welche sich am längsten in der Ladestation befinden. Bei einer Stückzahl welche grösser ist als die Besucherzahl, erlaubt dies einen lückenlosen Betrieb.
-Die notwendige Kapazitätsberechnung wird durch Formel \ref{fig:kapazitaet} beschrieben. Die maximale Leistung des Dojos lässt sich durch Leistung des Knochenschallgebers und des Microcontrollers beschreiben. Alle anderen Komponenten können durch ihren geringen Betriebsstrom vernachlässigt werden. Der Knochenschallgeber weist gemäss der Zielnummer 2.1 in Kapitel \pageref{Projektziele} eine maximale RMS Leistung von 214.5mW auf. Die Rechnung erfolgt mit einem Sicherheitswert von rund 0.35W und einer Betriebszeit von rund 80$\%$. Die Microcontrollerleistung lässt sich durch den Radio Strom (7.5mA) und einigen Mikroampere Systemstrom (gesamthaft ca. 100 $\mu$ A) multipliziert mit der Systemspannung von 3.6V bestimmen. Zur Sicherheit werden noch 0.1W zur Leistung addiert, damit die erforderliche Laufzeit auch wirklich erreicht wird. Nachfolgende Formel \ref{fig:LeistungMC} zeigt die Berechnung der Microcontrollerleistung und Formel \ref{fig:kapazitaet} zeigt die Kapazitätsabschätzung.
+Die notwendige Kapazitätsberechnung wird durch Formel \ref{fig:kapazitaet} beschrieben. Die maximale Leistung des Dojos lässt sich durch Leistung des Knochenschallgebers und des Microcontrollers beschreiben. Alle anderen Komponenten können durch ihren geringen Betriebsstrom vernachlässigt werden. Der Knochenschallgeber weist gemäss der Zielnummer 2.1 in Kapitel \pageref{Projektziele} eine maximale RMS Leistung von 214.5mW auf. Die Rechnung erfolgt mit einem Sicherheitswert von rund 0.35W und einer Betriebszeit von rund 80$\%$. Die Microcontrollerleistung lässt sich durch den Radio Strom (7.5mA) und einigen Mikroampere Systemstrom (gesamthaft ca. 100 $\mu$ A) multipliziert mit der Systemspannung von 3.6V bestimmen. Zur Berechnung wird noch ein Sicherheitsfaktor von 0.1W dazu addiert, damit die erforderliche Laufzeit auch wirklich erreicht wird. Nachfolgende Formel \ref{fig:LeistungMC} zeigt die Berechnung der Microcontrollerleistung und Formel \ref{fig:kapazitaet} zeigt die Kapazitätsabschätzung.
 
 \begin{equation}
-P_{MC}=U\cdot I_{MC}
+P_{MC}=U\cdot I_{MC}=3.6V\cdot 7.6mA=27.36mW
 \label{fig:LeistungMC}
 \end{equation}
 \begin{equation}
-Q=\frac{\left(t\cdot 0.8\cdot P_{Kn}\right)+\left(t\cdot P_{MC}\right)+P_{zus}}{U}=\frac{\left(5h\cdot 0.8\cdot 0.5W\right)+\left(5h\cdot 3.6V\cdot 7.6mA\right)+0.1W}{3.6V}=0.427Ah
+Q=\frac{\left(t\cdot 0.8\cdot P_{Kn}\right)+\left(t\cdot P_{MC}\right)+(t\cdot P_{zus})}{U}=\frac{\left(5h\cdot 0.8\cdot 0.5W\right)+\left(5h\cdot 27.36mW\right)+(0.1W\cdot 5h)}{3.6V}=0.566Ah
 \label{fig:kapazitaet}
 \end{equation}
 
-Die geforderte Kapazität liegt gemäss Formel \ref{fig:kapazitaet} bei 0.427Ah. Unabhängig von der Grösse der Batterie ist der Schutz vor äusseren Einflüssen. Hierbei kann mittels einer gezielten Überwachung die Lebensdauer der Batterie wesentlich verlängert und die anfallenden Nebenkosten vermindert werden. Diese Thematik wird im nachfolgenden Unterkapitel \ref{Überlade und Entladeschutz} genauer erläutert.
+Die geforderte Kapazität liegt gemäss Formel \ref{fig:kapazitaet} bei 0.566Ah. Unabhängig von der Grösse der Batterie ist der Schutz vor äusseren Einflüssen. Hierbei kann mittels einer gezielten Überwachung die Lebensdauer der Batterie wesentlich verlängert und die anfallenden Nebenkosten vermindert werden. Diese Thematik wird im nachfolgenden Unterkapitel \ref{Überlade und Entladeschutz} genauer erläutert.
                                          
 \subsection{Überlade und Entladeschutz}  \label{Überlade und Entladeschutz}
 
-Der Überlade- und Entladeschutz, besteht aus der Überwachung des Ladeprozesses wie auch der Signalisation bei Unterschreitung einer definierten Spannungsschwelle. Die Überwachung beim Ladezyklus erfolgt durch eine Spannungsüberwachung welche wie in Abbildung \ref{fig:Ladekurve Li-Ion Akku} ersichtlich erfolgt. Hierbei ist gut ersichtlich, dass die letzten ca. 20\% der Aufladung auf einem Spannungslevel von 4.2V erfolgen. Für die Regelung wird ein Batterielade-IC vom Typ MCP73831T verwendet.
-Während dem Ladevorgang kann hierbei zusätzlich 1 LED für die Signalisation des Ladevorgangs angesteuert werden. Für die Entladeüberwachung kann die Spannung der Batterie auf zwei Pins am Microcontroller angeschlossen und auf dem Microcontroller selber überwacht werden. Dies gewährleistet dass bei niedriger Spannung das gesamt System heruntergefahren und so der Akku vor Tiefentladung geschützt werden kann.
+Der Überlade- und Entladeschutz, besteht aus der Überwachung des Ladeprozesses wie auch der Signalisation bei Unterschreitung einer definierten Spannungsschwelle. Die Überwachung beim Ladezyklus erfolgt durch eine Spannungsüberwachung welche gemäss der nachfolgend aufgeführten Abbildung \ref{fig:Ladekurve Li-Ion Akku} erfolgt.
 
 \begin{figure}[H]
 	\begin{center}
@@ -49,3 +48,6 @@ Während dem Ladevorgang kann hierbei zusätzlich 1 LED für die Signalisation d
 		\label{fig:Ladekurve Li-Ion Akku}
 	\end{center}
 \end{figure}
+
+Hierbei ist gut ersichtlich, dass die letzten ca. 20\% der Aufladung auf einem Spannungslevel von 4.2V erfolgen. Für die Regelung wird ein Batterielade-IC vom Typ MCP73831T verwendet.
+Während dem Ladevorgang kann hierbei zusätzlich 1 LED für die Signalisation des Ladevorgangs angesteuert werden. Für die Entladeüberwachung gibt es zwei Möglichkeiten welche noch von der Batterie abhängig sind. Bei der einen Variante kann die Spannung der Batterie auf zwei Pins am Microcontroller angeschlossen und auf dem Microcontroller selber überwacht werden. Dies gewährleistet dass bei niedriger Spannung das gesamt System heruntergefahren und so der Akku vor Tiefentladung geschützt werden kann. Bei der anderen Variante weist der eingebaute Akku bereits ein Tiefentladungsschutz vor und schaltet sobald eine bestimmte Spannungsschwelle unterschritten wird die Energieversorgung ab. Da momentan noch kein 100$\%$ passender Akku gefunden wurde, bleibt es noch offen welche Variante schlussendlich realisiert wird.
