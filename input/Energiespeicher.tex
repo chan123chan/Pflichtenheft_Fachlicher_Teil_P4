@@ -13,7 +13,7 @@ Die gesamte Energiespeicherung wird in einzelne Komponenten aufgeteilt, wobei Ab
 Das Batteriemanagement bildet den Kern der gesamten Einheit und übernimmt, wie der Name schon sagt, das gesamte Management zwischen Batterie und Speisung. Der Akkumulator wird durch Überwachungsparameter wie Strom und Spannung kontrolliert und übernimmt die gesamte Energieversorgung des Dojos. Die Überwachung der Temperatur ist lediglich notwendig falls eine Schnellladefunktion implementiert wird. Dieses Zusatzfeature bleibt aber ein Wunschziel und wird in erster Linie nicht weiterverfolgt.
 
 \subsection{Speicher}
-Der Akkumulator besteht aus Lithium-Ionen Zellen, welche zusammen eine Spannung von 3.6V aufweisen. Aufgrund der 17mm Innendurchmesser des Dojos, sind die Abmessungen und somit auch die Auswahl an möglichen Energiespeichern relativ fix gegeben. Die notwendige Kapazität kann durch die zwei Faktoren Zeit und Energieverbrauch berechnet werden. Die Betriebszeit sollte hierbei einen Aufenthalten ohne Ladezyklus ermöglichen. Durchschnittlich haben Museen an einem Tag rund 7h geöffnet, wobei mit einem durchschnittlichen Aufenthalt von drei bis vier Stunden pro Person gerechnet wird. Die Betriebszeit des Dojos ermöglicht eine Betriebszeit von fünf Stunden, wobei durch Ladezyklen zwischen den Besuchen eine ganztägiger Betrieb ermöglicht wird. Um dies zu veranschaulichen, gibt nachfolgende Abbildung \ref{fig:Ladezyklus Dojo} einen Einblick ins Konzept.
+Der Akkumulator besteht aus Lithium-Ionen Zellen, welche zusammen eine Spannung von 3.6V aufweisen. Aufgrund der 17mm Innendurchmesser des Dojos, sind die Abmessungen und somit auch die Auswahl an möglichen Energiespeichern relativ fix gegeben. Die notwendige Kapazität kann durch die zwei Faktoren Zeit und Energieverbrauch berechnet werden. Die Betriebszeit sollte hierbei einen Aufenthalten ohne Ladezyklus ermöglichen. Durchschnittlich haben Museen an einem Tag rund 7h geöffnet, wobei mit einem durchschnittlichen Aufenthalt von drei bis vier Stunden pro Person gerechnet wird. Die Betriebszeit des Dojos ermöglicht eine Betriebszeit von fünf Stunden, wobei durch Ladezyklen zwischen den Besuchen eine ganztägiger Betrieb ermöglicht wird. Darum wurde im Ziel 5.1 ein Arbeitstag genannt. Um dies zu veranschaulichen, gibt nachfolgende Abbildung \ref{fig:Ladezyklus Dojo} einen Einblick ins Konzept.
 
 \begin{figure}[H]
 	\begin{center}
@@ -39,7 +39,7 @@ Die geforderte Kapazität liegt gemäss Formel \ref{fig:kapazitaet} bei 0.566Ah.
                                          
 \subsection{Überlade und Entladeschutz}  \label{Überlade und Entladeschutz}
 
-Der Überlade- und Entladeschutz, besteht aus der Überwachung des Ladeprozesses wie auch der Signalisation bei Unterschreitung einer definierten Spannungsschwelle. Die Überwachung beim Ladezyklus erfolgt durch eine Spannungsüberwachung welche gemäss der nachfolgend aufgeführten Abbildung \ref{fig:Ladekurve Li-Ion Akku} erfolgt.
+Der Überlade- und Entladeschutz ist ein Muss-Ziel 5.2 und besteht aus der Überwachung des Ladeprozesses wie auch der Signalisation bei Unterschreitung einer definierten Spannungsschwelle. Die Überwachung beim Ladezyklus erfolgt durch eine Spannungsüberwachung welche gemäss der nachfolgend aufgeführten Abbildung \ref{fig:Ladekurve Li-Ion Akku} erfolgt.
 
 \begin{figure}[H]
 	\begin{center}
